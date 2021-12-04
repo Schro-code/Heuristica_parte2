@@ -43,12 +43,14 @@ def get_nums(contenedores):
 
 
 class Estado:
-    def __init__(self, mapa, nums, port, espacios):
+    def __init__(self, mapa, nums, port, espacios, descargados_p1, descargados_p2):
         self.mapa = mapa
         self.num_N1, self.num_N2, self.num_R1, self.num_R2 = nums
         self.port = port
         self.espacios = espacios  # [ , , , , ,] indica la profundidad del primer espacio disponible, que no haya 'X' o que no haya un contendor
-        self.hijos = []  # [(Estado, coste)]
+        self.hijos = []  # [(Estado, coste, accion)]
+        self.descargados_p1 = descargados_p1 # Cantidad de contenedores que aun necesitan ser descargados en el puerto 1
+        self.descargados_p2 = descargados_p2 # Cantidad de contenedores que aun necesitan ser descargados en el puerto 2
 
     def print_Estado(self):
         print(self.mapa)
@@ -68,27 +70,69 @@ class Estado:
             for cont, num_cont in av:
                 mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
                 espacios = self.espacios[:]
-                if cont == 'N1' or cont == 'N2':
+                if (cont == 'N1' and self.port < 1) or (cont == 'N2' and self.port < 2):
                     if num_cont > 0 and espacios[pila] >= 0:
                         mapa[self.espacios[pila]][pila] = cont
                         espacios[pila] -= 1
-                        self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2 - 1, self.num_R1, self.num_R2],
-                                                  self.port, espacios), 1))
+                        self.hijos.append((Estado(mapa, [self.num_N1 - int(cont == 'N1'), self.num_N2 - int(cont == 'N2'), self.num_R1, self.num_R2],
+                                                  self.port, espacios,self.descargados_p1, self.descargados_p2), 1, 'poner' + cont + '_' + str(pila+1) + '_' + str(espacios[pila] + 2)))
 
-                elif cont == 'R1' or cont == 'R2':
+                elif (cont == 'R1' and self.port < 1) or (cont == 'R2' and self.port < 2):
                     if num_cont > 0 and espacios[pila] >= 0 and mapa[self.espacios[pila]][pila] == 'E':
                         mapa[self.espacios[pila]][pila] = cont
                         espacios[pila] -= 1
-                        self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2 - 1, self.num_R1, self.num_R2],
-                                                  self.port, espacios), 1))
+                        self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1 - int(cont == 'R1'), self.num_R2 - int(cont == 'R2')],
+                                                  self.port, espacios, self.descargados_p1, self.descargados_p2), 1, 'poner' + cont + '_' + str(pila+1) + '_' + str(espacios[pila] + 2)))
 
+    def descargar(self):
+        if self.port == 1:
+            for pila in range(len(self.mapa[0])):
+                mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
+                espacios = self.espacios[:]
+                cont = mapa[self.espacios[pila] + 1][pila]
+                if cont == 'N1' or cont == 'N2':
+                    mapa[self.espacios[pila]][pila] = 'N'
+                    espacios[pila] += 1
+                    self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2 + int(cont == 'N2'), self.num_R1,
+                                                     self.num_R2],self.port, espacios, self.descargados_p1 - 1, self.descargados_p2),
+                                       1, 'descargar' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))
+
+                if cont == 'R1' or cont == 'R2': # FActorizable
+                    mapa[self.espacios[pila]][pila] = 'E'
+                    espacios[pila] += 1
+                    self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1,
+                                                     self.num_R2 + int(cont == 'R2')],self.port, espacios, self.descargados_p1 - 1, self.descargados_p2),
+                                       1, 'decargar' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))
+
+        if self.port == 2:
+            for pila in range(len(self.mapa[0])):
+                mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
+                espacios = self.espacios[:]
+                cont = mapa[self.espacios[pila] + 1][pila]
+                if cont == 'N2':
+                    mapa[self.espacios[pila]][pila] = 'N'
+                    espacios[pila] += 1
+                    self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1,
+                                                     self.num_R2], self.port, espacios, self.descargados_p1,
+                                              self.descargados_p2 - 1),
+                                       1, 'descargar' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))
+
+                if cont == 'R2':  # FActorizable
+                    mapa[self.espacios[pila]][pila] = 'E'
+                    espacios[pila] += 1
+                    self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1,
+                                                     self.num_R2], self.port, espacios,
+                                              self.descargados_p1, self.descargados_p2 -1),
+                                       1, 'decargar' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))
 
     def mover_barco(self):
+        mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
+        espacios = self.espacios[:]
         if self.port == 0 and (self.num_N1 + self.num_N2 + self.num_R1 + self.num_R2) == 0:
-            self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1, self.num_R2], 1, self.espacios), 1))
+            self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1, self.num_R2], 1, self.espacios,self.descargados_p1, self.descargados_p2), 1,'mover_p1'))
 
-        if self.port == 1 and (self.num_N1 + self.num_N2 + self.num_R1 + self.num_R2) == 0:
-            self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1, self.num_R2], 2, self.espacios), 1))
+        if self.port == 1 and (self.num_N2 + self.num_R2) == 0 and self.descargados_p1 == 0:
+            self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1, self.num_R2], 2, self.espacios, self.descargados_p1,self.descargados_p2), 1,'mover_p2'))
 
     def __eq__(self,other):
         """Muy muy optimizable """
@@ -99,22 +143,29 @@ class Estado:
                     return False
         return self.port == other.port
 
+    def __hash__(self):
+        return hash(tuple(tuple(l) for l in self.mapa))
 
-inicio = Estado(mapa, [1, 2, 1, 1], 0, get_disponibles(mapa))
-goal = Estado(mapa, [0, 0, 0, 0], 2, get_disponibles(mapa))
-
-"""
-for i, j in inicio.getHijos():
-    print("---------------------------------")
-    i.print_Estado()
-    print("---------------------------------")
+num_contenedores = get_nums(contenedores)
+inicio = Estado(mapa, num_contenedores, 0, get_disponibles(mapa), num_contenedores[0] + num_contenedores[2], num_contenedores[1] + num_contenedores[3])
+goal = Estado(mapa, [0, 0, 0, 0], 2, get_disponibles(mapa), 0, 0)
 
 """
-def heuristica():
+b = inicio.getHijos()
+b = b[0]
+c = b[0].getHijos()
+c = c[0]
+print("---------------------------------")
+b[0].print_Estado()
+c[0].print_Estado()
+print("---------------------------------")"""
+
+
+def heuristica(arg):
     return 1
 
 
-def AStart(inicio: Estado, goal: Estado):
+def AStart(inicio, goal):
     estadisticas = [0,0,0,0] # [Tiempo total, Costel total, Longitud del plan, Nodos expandidos]
     exito = False
 
@@ -123,18 +174,29 @@ def AStart(inicio: Estado, goal: Estado):
 
     g_cost = {inicio: 0}
     abierta[inicio] = g_cost[inicio] + heuristica(inicio)
-    prev = {}  # estado : estado_anterior
+    prev = {}  # estado : estado_anterior, accion
 
     while abierta:
         curr, coste_f = abierta.popitem()
 
-        if curr == goal:
+        #if curr == goal:
+        #if (curr.num_N1 + curr.num_N2 + curr.num_R1 + curr.num_R2) == 0:
+        #if curr.descargados_p1 == 0 :
+        #if curr.port == 2:
+        if curr.port == 2 and curr.descargados_p2 == 0:
+            print("Exito")
+            curr.print_Estado()
+            moves = []
+            while curr != inicio:
+                curr, accion = prev[curr]
+                moves.append(accion)
+            print(moves[::-1])
             exito = True
             break
         else:
             cerrada.add(curr)
 
-        for hijo, coste in curr.getHijos():
+        for hijo, coste, accion in curr.getHijos():
             coste_hijo = g_cost[curr] + coste
 
             if hijo in cerrada:
@@ -142,5 +204,7 @@ def AStart(inicio: Estado, goal: Estado):
 
             if hijo not in abierta or g_cost[hijo] > coste_hijo:
                 g_cost[hijo] = coste_hijo
-                abierta[hijo] = g + heuristica(hijo)
-                prev[hijo] = s
+                abierta[hijo] = coste_hijo + heuristica(hijo)
+                prev[hijo] = curr, accion
+
+AStart(inicio,goal)
