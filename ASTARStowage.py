@@ -2,64 +2,10 @@ from heapdict import heapdict
 import sys
 import time
 
-# Leemos el fichero  mapa1
-with open(sys.argv[1] + "/" + sys.argv[2], "r") as f:
-    mapa = [line.split() for line in f.read().splitlines()]
-
-# Leemos los tipos de contenedores1
-with open(sys.argv[1] + "/" + sys.argv[3], "r") as f:
-    contenedores = [line.split() for line in f.read().splitlines()]
-
-print(mapa)
-print(contenedores)
-
-
-def get_disponibles(mapa):
-    "Dado un mapa, devuelve por cada pila, la posicion mas profunda a la que se pueden poder contenedores"
-
-    disponible = [-1 for i in range(len(mapa[0]))]
-    for profundidad in range(len(mapa)):
-        for pila in range(len(mapa[0])):
-            if mapa[profundidad][pila] == 'X' and disponible[pila] == -1:
-                disponible[pila] = profundidad - 1
-
-            if profundidad == (len(mapa) - 1) and disponible[pila] == -1:
-                disponible[pila] = len(mapa) - 1
-    return disponible
-
-
-def get_nums(contenedores):
-    """Dados los contenedores, los clasifica en los grupos N1, N2, R1, R2"""
-    nums = [0 for i in range(4)]
-
-    for cont in contenedores:
-        if cont[2] == '1':
-            if cont[1] == 'S':
-                nums[0] += 1
-            else:
-                nums[2] += 1
-        else:
-            if cont[1] == 'S':
-                nums[1] += 1
-            else:
-                nums[3] += 1
-    return nums
-
-
-def clasificar_contenedores(contenedores):
-    cont = [[] for i in range(4)]  # [ [contenedores N1] [contenedores N2] [contenedores R1] [contenedores R2]]
-    for tipo in contenedores:
-        ind = int(tipo[2])
-        if tipo[1] == 'R':
-            ind += 2
-        cont[ind - 1].append(int(tipo[0]))
-    return cont
-
-
-print(clasificar_contenedores(contenedores))
-
+'''------------------------------Modelizacion del Estado del problema --------------'''
 
 class Estado:
+    """Definicio de Estado en nuestro el problema de los contenedores"""
     def __init__(self, mapa, nums, port, espacios, descargados_p1, descargados_p2):
         self.mapa = mapa
         self.num_N1, self.num_N2, self.num_R1, self.num_R2 = nums  # Cantidad de contenedores que necesitan ser cargados en el barco
@@ -83,7 +29,7 @@ class Estado:
         self.descargar()
         return self.hijos[:]
 
-    def poner(self):
+    '''def poner2(self):
         av = [('N1', self.num_N1), ('N2', self.num_N2), ('R1', self.num_R1), ('R2', self.num_R2)]
         for pila in range(len(self.mapa[0])):
             for cont, num_cont in av:
@@ -108,9 +54,36 @@ class Estado:
                                                          self.num_R2 - int(cont == 'R2')],
                                                   self.port, espacios, self.descargados_p1, self.descargados_p2),
                                            10 + (espacios[pila] + 1),
-                                           'poner_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 2)))
+                                           'poner_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 2)))'''
+    def poner(self):
+        ''' Ponemos en cada pila, un contenedor si es posible'''
+        av = [('N1', self.num_N1), ('N2', self.num_N2), ('R1', self.num_R1), ('R2', self.num_R2)]
 
-    def descargar(self):
+        #Por cada pila compruebo si puedo poner cada tipo de contenedor distinto N1, N2, R1, R2
+        for pila in range(len(self.mapa[0])):
+            for cont, num_cont in av:
+                mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
+                espacios = self.espacios[:]
+
+                # Si hay contenedores y en la pila existe una posicion disponible
+                # Si es un contenedor R la posicion debe ser E
+                # Si estamos en el puerto 0 se cargan todos los contenedores, en el puerto 1 se cargan 2
+                if (num_cont > 0 and espacios[pila] >= 0 ) and \
+                        (((cont == 'N1' or (cont == 'R1' and mapa[self.espacios[pila]][pila] == 'E')) and self.port < 1) or \
+                         ((cont == 'N2' or (cont == 'R2' and mapa[self.espacios[pila]][pila] == 'E')) and self.port < 2)):
+
+                    mapa[self.espacios[pila]][pila] = cont
+                    espacios[pila] -= 1
+
+                    #Creamos el nuevo estado hijo, se añade  (Estado, coste, accion)
+                    self.hijos.append((Estado(mapa,
+                                              [self.num_N1 - int(cont == 'N1'), self.num_N2 - int(cont == 'N2'),self.num_R1 - int(cont == 'R1'), self.num_R2 - int(cont == 'R2')],
+                                              self.port, espacios, self.descargados_p1, self.descargados_p2),
+                                       10 + (espacios[pila] + 1),
+                                       'poner_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 2)))
+
+
+    '''def descargar2(self):
         if self.port == 1:
             for pila in range(len(self.mapa[0])):
                 mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
@@ -141,7 +114,10 @@ class Estado:
             for pila in range(len(self.mapa[0])):
                 mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
                 espacios = self.espacios[:]
-                cont = mapa[self.espacios[pila]][pila]
+                if self.espacios[pila] + 1 < len(self.mapa):
+                    cont = mapa[self.espacios[pila] + 1][pila]
+                else:
+                    cont = 'fuera del mapa'
                 if cont == 'N2':
                     mapa[self.espacios[pila]][pila] = 'N'
                     espacios[pila] += 1
@@ -158,16 +134,50 @@ class Estado:
                                                      self.num_R2], self.port, espacios,
                                               self.descargados_p1, self.descargados_p2 - 1),
                                        15 + 2 * (espacios[pila] + 1),
-                                       'decargar_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))
+                                       'decargar_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))'''
+
+    def descargar(self):
+        if self.port == 1 or self.port == 2:
+            for pila in range(len(self.mapa[0])):
+                mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
+                espacios = self.espacios[:]
+                if self.espacios[pila] + 1 < len(self.mapa):
+                    cont = mapa[self.espacios[pila] + 1][pila]
+                else:
+                    cont = 'fuera del mapa'
+
+                if cont == 'N1' or cont == 'N2' or cont == 'R1' or cont == 'R2':
+                    if cont == 'N1' or cont == 'N2':
+                        mapa[self.espacios[pila]][pila] = 'N'
+
+                    if cont == 'R1' or cont == 'R2':
+                        mapa[self.espacios[pila]][pila] = 'E'
+                    espacios[pila] += 1
+                    self.hijos.append((Estado(mapa,
+                                              [self.num_N1, self.num_N2 + int(cont == 'N2' and self.port == 1),
+                                                self.num_R1, self.num_R2 + int(cont == 'R2' and self.port == 1)],
+                                              self.port, espacios,
+                                              self.descargados_p1 - int((cont == 'R1' or cont == 'N1') and self.port == 1),
+                                              self.descargados_p2 - int((cont == 'R2' or cont == 'N2') and self.port == 2)),
+                                       15 + 2 * (espacios[pila] ),
+                                       'descargar_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))
+
+
 
     def mover_barco(self):
+        """Movemos el barco"""
         mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
-        espacios = self.espacios[:]
+        #Si el puerto es 1 y no hay ningun contenedores N1, N2, R1, R2 restante por poner
         if self.port == 0 and (self.num_N1 + self.num_N2 + self.num_R1 + self.num_R2) == 0:
+
+            #Añadimos nuevo hijo  (Estado, coste, accion)
             self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1, self.num_R2], 1, self.espacios,
                                       self.descargados_p1, self.descargados_p2), 3500, 'mover_barco_p0_p1'))
 
+        # Si el puerto es 1 y no hay ningun contenedores  N2, R2 restante por poner
         if self.port == 1 and (self.num_N2 + self.num_R2) == 0 and self.descargados_p1 == 0:
+
+            #Añadimos nuevo hijo  (Estado, coste, accion)
             self.hijos.append((Estado(mapa, [self.num_N1, self.num_N2, self.num_R1, self.num_R2], 2, self.espacios,
                                       self.descargados_p1, self.descargados_p2), 3500, 'mover_barco_p1_p2'))
 
@@ -184,22 +194,10 @@ class Estado:
         return hash(tuple(tuple(l) for l in self.mapa))
 
 
-num_contenedores = get_nums(contenedores)
-inicio = Estado(mapa, num_contenedores, 0, get_disponibles(mapa), num_contenedores[0] + num_contenedores[2],
-                num_contenedores[1] + num_contenedores[3])
-goal = Estado(mapa, [0, 0, 0, 0], 2, get_disponibles(mapa), 0, 0)
 
-"""
-b = inicio.getHijos()
-b = b[0]
-c = b[0].getHijos()
-c = c[0]
-print("---------------------------------")
-b[0].print_Estado()
-c[0].print_Estado()
-print("---------------------------------")"""
-
+'''------------------------------Heuristicas y A* --------------'''
 def heuristica(opcion,estado):
+    # 0 es para amplitud
     heuristicas = {0: 0, 1 : heuristica1(estado)}
     return heuristicas[opcion]
 
@@ -219,7 +217,7 @@ def heuristica1(estado):
     return acc
 
 
-def AStart(inicio, goal):
+def AStart(inicio):
     estadisticas = {'Tiempo total': time.time(), 'Coste_total': 0, 'Longitud del plan': 0,
                     'Nodos expandidos': 0}  # [Tiempo total, Costel total, Longitud del plan, Nodos expandidos]
     exito = False
@@ -266,6 +264,50 @@ def AStart(inicio, goal):
                 prev[hijo] = curr, accion
 
 
+'''------------------------------Funciones auxiliares  --------------'''
+
+def get_disponibles(mapa):
+    "Dado un mapa, devuelve por cada pila, la posicion mas profunda a la que se pueden poder contenedores"
+
+    disponible = [-1 for i in range(len(mapa[0]))]
+    for profundidad in range(len(mapa)):
+        for pila in range(len(mapa[0])):
+            if mapa[profundidad][pila] == 'X' and disponible[pila] == -1:
+                disponible[pila] = profundidad - 1
+
+            if profundidad == (len(mapa) - 1) and disponible[pila] == -1:
+                disponible[pila] = len(mapa) - 1
+    return disponible
+
+
+def get_nums(contenedores):
+    """Dados los contenedores, los clasifica en los grupos N1, N2, R1, R2"""
+    nums = [0 for i in range(4)]
+
+    for cont in contenedores:
+        if cont[2] == '1':
+            if cont[1] == 'S':
+                nums[0] += 1
+            else:
+                nums[2] += 1
+        else:
+            if cont[1] == 'S':
+                nums[1] += 1
+            else:
+                nums[3] += 1
+    return nums
+
+
+def clasificar_contenedores(contenedores):
+    cont = [[] for i in range(4)]  # [ [contenedores N1] [contenedores N2] [contenedores R1] [contenedores R2]]
+    for tipo in contenedores:
+        ind = int(tipo[2])
+        if tipo[1] == 'R':
+            ind += 2
+        cont[ind - 1].append(int(tipo[0]))
+    return cont
+
+
 def parse_solution(mapa, solution):
     traductor_contenedores = {}
     contenedores_clasificados = clasificar_contenedores(contenedores)
@@ -297,8 +339,23 @@ def parse_solution(mapa, solution):
             acciones.append(f"{orden}. <{op}> ({traductor_contenedores[x + y]}, ({x},{y}))")
     return acciones
 
+'''------------------------------Resolucion del problema  --------------'''
 
-solucion, estadisticas = AStart(inicio, goal)
+# Leemos el fichero  mapa
+with open(sys.argv[1] + "/" + sys.argv[2], "r") as f:
+    mapa = [line.split() for line in f.read().splitlines()]
+
+# Leemos los tipos de contenedores
+with open(sys.argv[1] + "/" + sys.argv[3], "r") as f:
+    contenedores = [line.split() for line in f.read().splitlines()]
+
+
+num_contenedores = get_nums(contenedores)
+inicio = Estado(mapa, num_contenedores, 0, get_disponibles(mapa), num_contenedores[0] + num_contenedores[2],
+                num_contenedores[1] + num_contenedores[3])
+
+
+solucion, estadisticas = AStart(inicio)
 s = parse_solution(mapa, solucion)
 
 """Escribimos el fichero con la solucion del problema"""
