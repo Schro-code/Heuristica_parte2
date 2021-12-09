@@ -41,7 +41,7 @@ class Estado:
 
         #Por cada pila compruebo si puedo poner cada tipo de contenedor distinto N1, N2, R1, R2
         for pila in range(len(self.mapa[0])):
-            for cont, num_cont in av:
+            for cont, num_cont in av[::-1]:
                 mapa = [line[:] for line in self.mapa]  # cuidado con los pnteros
                 espacios = self.espacios[:]
 
@@ -58,7 +58,7 @@ class Estado:
                     self.hijos.append((Estado(mapa,
                                               [self.num_N1 - int(cont == 'N1'), self.num_N2 - int(cont == 'N2'),self.num_R1 - int(cont == 'R1'), self.num_R2 - int(cont == 'R2')],
                                               self.port, espacios, self.descargados_p1, self.descargados_p2),
-                                       10 + (espacios[pila] + 1),
+                                       10 + (espacios[pila] ),
                                        'poner_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 2)))
 
 
@@ -279,7 +279,8 @@ with open(sys.argv[1] + "/" + sys.argv[2], "r") as f:
 with open(sys.argv[1] + "/" + sys.argv[3], "r") as f:
     contenedores = [line.split() for line in f.read().splitlines()]
 
-opcion = sys.argv[4]
+opcion = sys.argv[4]  # seleccion de heuristica
+
 num_contenedores = get_nums(contenedores)
 inicio = Estado(mapa, num_contenedores, 0, get_disponibles(mapa), num_contenedores[0] + num_contenedores[2],
                 num_contenedores[1] + num_contenedores[3])
