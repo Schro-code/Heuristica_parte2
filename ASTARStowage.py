@@ -126,7 +126,7 @@ class Estado:
 '''------------------------------Heuristicas y A* --------------'''
 def heuristica(estado,opcion):
     # 0 es para amplitud
-    heuristicas = {"amplitud": 0, "heuristica1": heuristica1(estado), "heuristica2": heuristica2(estado)}
+    heuristicas = {"heuristica0": 0, "heuristica1": heuristica1(estado), "heuristica2": heuristica2(estado)}
     return heuristicas[opcion]
 
 def heuristica1(estado):
@@ -141,11 +141,14 @@ def heuristica1(estado):
     if estado.port == 0:
         # En el puerto 0 el coste sera los que hay que cargar mas lo que hay que descargar
         acc += (estado.num_N1 + estado.num_N2 + estado.num_R1 + estado.num_R2) * 10
-    if estado.port <= 1:
+        acc += (estado.descargados_p1 + estado.descargados_p2) * 15
+    if estado.port == 1:
         # En el puerto 1 el coste sera los que hay que cargar para el puerto 2 y lo que hay que descargar
         acc += (estado.num_N2 + estado.num_R2) * 10
-    if estado.port <= 2:
-        acc += (estado.descargados_p2 + estado.descargados_p2) * 15
+        acc += (estado.descargados_p2 + estado.descargados_p1) * 15
+    if estado.port == 2:
+        # En el puerto 2 hay que descargar
+        acc += estado.descargados_p2 * 15
     return acc
 
 def heuristica2(estado):
@@ -158,22 +161,21 @@ def heuristica2(estado):
         acc += 3500 * (1 - estado.port)  # Solo necesita ir al puerto 1
 
     if estado.port == 0:
-        # Ee el puerto 0 hay que ir al puerto 1, descargar todos los contenedores y colocarlos, ir al puerto 2 y descargar los contenedores restantes
-        acc += (estado.num_N1 + estado.num_N2 + estado.num_R1 + estado.num_R2) * 10 # Coste de los que faltan por cargar
+        # Ee el puerto 0 hay que ir al puerto 1, descargar todos los contenedores, colocarlos, ir al puerto 2 y descargar los contenedores restantes
+        acc += (2*estado.num_N1 + 2*estado.num_N2 + 2*estado.num_R1 + 2*estado.num_R2) * 10  # Coste de los que faltan por cargar
 
     if estado.port <= 1:
-        acc += (estado.descargados_p1 + estado.descargados_p1 + estado.descargados_p2 + estado.descargados_p2) * 15  # Descagar en el puerto 1
-        acc += (estado.num_N2 + estado.num_R2) * 10  # Cargar los que van al puerto 2
+        acc += (2*estado.descargados_p1 + 2*estado.descargados_p2) * 15  # Descagar en el puerto 1
+        acc += (2*estado.num_N2 + 2*estado.num_R2) * 10  # Cargar los que van al puerto 2
 
     if estado.port <= 2:
-        acc += (estado.descargados_p2 + estado.descargados_p2) * 15 # Descargar los que van al puerto 2
+        acc += (2*estado.descargados_p2) * 15  # Descargar los que van al puerto 2
     return acc
 
 
 def AStart(inicio,opcion):
     estadisticas = {'Tiempo total': time.time(), 'Coste_total': 0, 'Longitud del plan': 0,
                     'Nodos expandidos': 0}  # [Tiempo total, Costel total, Longitud del plan, Nodos expandidos]
-    exito = False
 
     cerrada = set()  # Lista cerrada con los nodos expandidos
     abierta = heapdict()  # Lista de prioridad con los nodos generados
@@ -182,12 +184,8 @@ def AStart(inicio,opcion):
     abierta[inicio] = g_cost[inicio] + heuristica(inicio, opcion)
     prev = {}  # estado : estado_anterior, accion, coste_accion
     while abierta:
+
         curr, coste_f = abierta.popitem()
-        # if curr == goal:
-        #if (curr.num_N1 + curr.num_N2 + curr.num_R1 + curr.num_R2) == 0:
-        # if curr.descargados_p1 == 0:
-        #if curr.port == 2:
-        #if curr.port == 2 and curr.descargados_p2 == 0:
         if (curr.descargados_p2 + curr.descargados_p1) == 0:
             moves = []
             estadisticas['Coste_total'] = g_cost[curr]
