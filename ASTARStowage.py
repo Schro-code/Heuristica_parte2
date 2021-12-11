@@ -58,7 +58,7 @@ class Estado:
                     self.hijos.append((Estado(mapa,
                                               [self.num_N1 - int(cont == 'N1'), self.num_N2 - int(cont == 'N2'),self.num_R1 - int(cont == 'R1'), self.num_R2 - int(cont == 'R2')],
                                               self.port, espacios, self.descargados_p1, self.descargados_p2),
-                                       10 + (espacios[pila] ),
+                                       10 + (espacios[pila] + 1),
                                        'poner_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 2)))
 
 
@@ -88,7 +88,7 @@ class Estado:
                                               self.port, espacios,
                                               self.descargados_p1 - int((cont == 'R1' or cont == 'N1') and self.port == 1),
                                               self.descargados_p2 - int((cont == 'R2' or cont == 'N2') and self.port == 2)),
-                                       15 + 2 * (espacios[pila] ),
+                                       15 + 2 * (espacios[pila]),
                                        'descargar_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))
 
 
@@ -126,22 +126,47 @@ class Estado:
 '''------------------------------Heuristicas y A* --------------'''
 def heuristica(estado,opcion):
     # 0 es para amplitud
-    heuristicas = {"amplitud": 0, "heuristica1": heuristica1(estado)}
+    heuristicas = {"amplitud": 0, "heuristica1": heuristica1(estado), "heuristica2": heuristica2(estado)}
     return heuristicas[opcion]
 
 def heuristica1(estado):
+    '''Heuristica adminisible, ignora el coste de recolocacion'''
+
     acc = 0
-    acc += 3500 * (2 - estado.port)
+    if estado.descargados_p2 > 0:
+        acc += 3500 * (2 - estado.port) # Necesita ir al puerto 2
+    else:
+        acc += 3500 * (1 - estado.port)  # Solo necesita ir al puerto 1
+
     if estado.port == 0:
         # En el puerto 0 el coste sera los que hay que cargar mas lo que hay que descargar
         acc += (estado.num_N1 + estado.num_N2 + estado.num_R1 + estado.num_R2) * 10
-        acc += (estado.descargados_p1 + estado.descargados_p1 + estado.descargados_p2 + estado.descargados_p2) * 15
-    if estado.port == 1:
+    if estado.port <= 1:
         # En el puerto 1 el coste sera los que hay que cargar para el puerto 2 y lo que hay que descargar
         acc += (estado.num_N2 + estado.num_R2) * 10
-        acc += (estado.descargados_p1 + estado.descargados_p1 + estado.descargados_p2 + estado.descargados_p2) * 15
-    if estado.port == 2:
+    if estado.port <= 2:
         acc += (estado.descargados_p2 + estado.descargados_p2) * 15
+    return acc
+
+def heuristica2(estado):
+    '''Heuristica no adminisible, supone que en los puerto 1 y 2 hay que descargar siempre TODOS los contenedores'''
+
+    acc = 0
+    if estado.descargados_p2 > 0:
+        acc += 3500 * (2 - estado.port)  # Necesita ir al puerto 2
+    else:
+        acc += 3500 * (1 - estado.port)  # Solo necesita ir al puerto 1
+
+    if estado.port == 0:
+        # Ee el puerto 0 hay que ir al puerto 1, descargar todos los contenedores y colocarlos, ir al puerto 2 y descargar los contenedores restantes
+        acc += (estado.num_N1 + estado.num_N2 + estado.num_R1 + estado.num_R2) * 10 # Coste de los que faltan por cargar
+
+    if estado.port <= 1:
+        acc += (estado.descargados_p1 + estado.descargados_p1 + estado.descargados_p2 + estado.descargados_p2) * 15  # Descagar en el puerto 1
+        acc += (estado.num_N2 + estado.num_R2) * 10  # Cargar los que van al puerto 2
+
+    if estado.port <= 2:
+        acc += (estado.descargados_p2 + estado.descargados_p2) * 15 # Descargar los que van al puerto 2
     return acc
 
 
@@ -162,7 +187,8 @@ def AStart(inicio,opcion):
         #if (curr.num_N1 + curr.num_N2 + curr.num_R1 + curr.num_R2) == 0:
         # if curr.descargados_p1 == 0:
         #if curr.port == 2:
-        if curr.port == 2 and curr.descargados_p2 == 0:
+        #if curr.port == 2 and curr.descargados_p2 == 0:
+        if (curr.descargados_p2 + curr.descargados_p1) == 0:
             moves = []
             estadisticas['Coste_total'] = g_cost[curr]
             while curr != inicio:
@@ -170,8 +196,6 @@ def AStart(inicio,opcion):
                 curr, accion = prev[curr]
                 moves.append(accion)
             estadisticas['Tiempo total'] = time.time() - estadisticas['Tiempo total']
-            #print(moves[::-1])
-            #print(estadisticas)
             return moves[::-1], estadisticas
         else:
             cerrada.add(curr)
@@ -206,12 +230,14 @@ def get_disponibles(mapa):
             if profundidad == (len(mapa) - 1) and disponible[pila] == -2:
                 disponible[pila] = len(mapa) - 1
 
-    print(disponible)
     return disponible
 
 
 def get_nums(contenedores):
     """Dados los contenedores, los clasifica en los grupos N1, N2, R1, R2"""
+    '''e.g contenedores =[['1', 'S', '2'], ['2', 'S', '1'], ['3', 'S', '2'], ['4', 'R', '1'], ['5', 'R', '2']]
+        return [1, 2, 1, 1] '''
+
     nums = [0 for i in range(4)]
 
     for cont in contenedores:
@@ -228,46 +254,24 @@ def get_nums(contenedores):
     return nums
 
 
-def clasificar_contenedores(contenedores):
-    cont = [[] for i in range(4)]  # [ [contenedores N1] [contenedores N2] [contenedores R1] [contenedores R2]]
-    for tipo in contenedores:
-        ind = int(tipo[2])
-        if tipo[1] == 'R':
-            ind += 2
-        cont[ind - 1].append(int(tipo[0]))
-    return cont
+def parse_solution(solucion):
+    ''' Devuelve la soucion para escribirl en el fichero
+    e.g  solucion = ['poner_N1_1_1',  'mover_barco_p0_p1']
+     return [1. <poner> (N1, (1,1)), 2. <mover> (p0,p1), 8. <descargar> (N1, (1,1))]'''
 
-
-def parse_solution(mapa, solution):
-    traductor_contenedores = {}
-    contenedores_clasificados = clasificar_contenedores(contenedores)
     acciones = []
     orden = 0
-    p1, p2, p3, p4 = 0, 0, 0, 0
-    for linea in solution:
+    for linea in solucion:
         orden += 1
         op, cont, x, y = linea.split('_')
         if op == 'mover':
             acciones.append(f"{orden}. <{op}> ({x},{y})")
         else:
-            if x + y in traductor_contenedores.keys():
-                pass
-            else:
-                if cont == 'N1':
-                    ax = contenedores_clasificados[0][p1]
-                    p1 += 1
-                elif cont == 'N2':
-                    ax = contenedores_clasificados[1][p2]
-                    p2 += 1
-                elif cont == 'R1':
-                    ax = contenedores_clasificados[2][p3]
-                    p3 += 1
-                elif cont == 'R2':
-                    ax = contenedores_clasificados[3][p4]
-                    p4 += 1
-                traductor_contenedores[x + y] = ax
-            acciones.append(f"{orden}. <{op}> ({traductor_contenedores[x + y]}, ({x},{y}))")
+            acciones.append(f"{orden}. <{op}> ({cont}, ({x},{y}))")
     return acciones
+
+
+
 
 '''------------------------------Resolucion del problema  --------------'''
 
@@ -282,11 +286,14 @@ with open(sys.argv[1] + "/" + sys.argv[3], "r") as f:
 opcion = sys.argv[4]  # seleccion de heuristica
 
 num_contenedores = get_nums(contenedores)
+
+#Estado(mapa, num_contenedores = [ N1, N2, R1, R2], puerto, posi_pila_dis = [ , , ,], num de cont a p1, num de cont a p2)
 inicio = Estado(mapa, num_contenedores, 0, get_disponibles(mapa), num_contenedores[0] + num_contenedores[2],
                 num_contenedores[1] + num_contenedores[3])
 
 solucion, estadisticas = AStart(inicio,opcion)
-s = parse_solution(mapa, solucion)
+s = parse_solution(solucion)  # Parseamos la solucion para escribirla
+
 
 """Escribimos el fichero con la solucion del problema"""
 with open(sys.argv[1] + "/" + sys.argv[2] + "-" + sys.argv[3] + "-" + sys.argv[4] + ".output", 'w') as f:
