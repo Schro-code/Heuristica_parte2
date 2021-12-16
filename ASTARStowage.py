@@ -59,7 +59,7 @@ class Estado:
                                               [self.num_N1 - int(cont == 'N1'), self.num_N2 - int(cont == 'N2'),self.num_R1 - int(cont == 'R1'), self.num_R2 - int(cont == 'R2')],
                                               self.port, espacios, self.descargados_p1, self.descargados_p2),
                                        10 + (espacios[pila] + 1),
-                                       'poner_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 2)))
+                                       'poner_' + cont + '_' + str(pila) + '_' + str(espacios[pila] + 1)))
 
 
 
@@ -89,7 +89,7 @@ class Estado:
                                               self.descargados_p1 - int((cont == 'R1' or cont == 'N1') and self.port == 1),
                                               self.descargados_p2 - int((cont == 'R2' or cont == 'N2') and self.port == 2)),
                                        15 + 2 * (espacios[pila]),
-                                       'descargar_' + cont + '_' + str(pila + 1) + '_' + str(espacios[pila] + 1)))
+                                       'descargar_' + cont + '_' + str(pila) + '_' + str(espacios[pila])))
 
 
 
