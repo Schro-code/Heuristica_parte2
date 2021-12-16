@@ -28,3 +28,4 @@
 ./ASTARStowage.sh  ./ASTAR-tests mapa6 contenedores6 heuristica0
 ./ASTARStowage.sh  ./ASTAR-tests mapa7 contenedores7 heuristica0
 ./ASTARStowage.sh  ./ASTAR-tests mapa8 contenedores8 heuristica0
+./ASTARStowage.sh  ./ASTAR-tests mapa12 contenedores12 heuristica0

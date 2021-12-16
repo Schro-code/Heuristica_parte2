@@ -2,7 +2,7 @@ from heapdict import heapdict
 import sys
 import time
 
-'''------------------------------Modelizacion del Estado del problema --------------'''
+'''------------------------------Modelización del Estado del problema------------------------------'''
 
 class Estado:
     """Definicio de Estado en nuestro el problema de los contenedores"""
