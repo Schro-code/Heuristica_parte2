@@ -13,6 +13,10 @@
 ./ASTARStowage.sh  ./ASTAR-tests mapa11 contenedores11 heuristica1
 ./ASTARStowage.sh  ./ASTAR-tests mapa14 contenedores14 heuristica1
 ./ASTARStowage.sh  ./ASTAR-tests mapa13 contenedores13 heuristica1
+./ASTARStowage.sh  ./ASTAR-tests mapa15 contenedores15 heuristica1
+./ASTARStowage.sh  ./ASTAR-tests mapa16 contenedores16 heuristica1
+./ASTARStowage.sh  ./ASTAR-tests mapa17 contenedores17 heuristica1
+./ASTARStowage.sh  ./ASTAR-tests mapa18 contenedores18 heuristica1
 ./ASTARStowage.sh  ./ASTAR-tests mapa1 contenedores1 heuristica2
 ./ASTARStowage.sh  ./ASTAR-tests mapa2 contenedores2 heuristica2
 ./ASTARStowage.sh  ./ASTAR-tests mapa3 contenedores3 heuristica2
@@ -26,6 +30,10 @@
 ./ASTARStowage.sh  ./ASTAR-tests mapa11 contenedores11 heuristica2
 ./ASTARStowage.sh  ./ASTAR-tests mapa14 contenedores14 heuristica2
 ./ASTARStowage.sh  ./ASTAR-tests mapa13 contenedores13 heuristica2
+./ASTARStowage.sh  ./ASTAR-tests mapa15 contenedores15 heuristica2
+./ASTARStowage.sh  ./ASTAR-tests mapa16 contenedores16 heuristica2
+./ASTARStowage.sh  ./ASTAR-tests mapa17 contenedores17 heuristica2
+./ASTARStowage.sh  ./ASTAR-tests mapa18 contenedores18 heuristica2
 ./ASTARStowage.sh  ./ASTAR-tests mapa1 contenedores1 heuristica0
 ./ASTARStowage.sh  ./ASTAR-tests mapa2 contenedores2 heuristica0
 ./ASTARStowage.sh  ./ASTAR-tests mapa3 contenedores3 heuristica0
@@ -36,3 +44,7 @@
 ./ASTARStowage.sh  ./ASTAR-tests mapa8 contenedores8 heuristica0
 ./ASTARStowage.sh  ./ASTAR-tests mapa13 contenedores13 heuristica0
 ./ASTARStowage.sh  ./ASTAR-tests mapa14 contenedores14 heuristica0
+./ASTARStowage.sh  ./ASTAR-tests mapa15 contenedores15 heuristica0
+./ASTARStowage.sh  ./ASTAR-tests mapa16 contenedores16 heuristica0
+./ASTARStowage.sh  ./ASTAR-tests mapa17 contenedores17 heuristica0
+./ASTARStowage.sh  ./ASTAR-tests mapa18 contenedores18 heuristica0
