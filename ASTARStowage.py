@@ -136,7 +136,7 @@ class Estado:
 
 def heuristica(estado,opcion):
     # 0 es para amplitud
-    heuristicas = {"heuristica0": 0, "heuristica1": heuristica1(estado), "heuristica2": heuristica2(estado)}
+    heuristicas = {"heuristica0": 0, "heuristica1": heuristica1(estado), "heuristica2": heuristica2(estado), "heuristica3": heuristica3(estado)}
     return heuristicas[opcion]
 
 def heuristica1(estado):
@@ -182,6 +182,13 @@ def heuristica2(estado):
         acc += (2*estado.descargados_p2) * 15  # Descargar los que van al puerto 2
     return acc
 
+def heuristica3(estado):
+    acc = heuristica2(estado)
+    for pila in range(len(mapa[0])):
+        for profundidad in range(len(mapa)):
+            if (estado.mapa[profundidad][pila] == "N1" or estado.mapa[profundidad][pila] == "N2") and mapa[profundidad][pila] == "E":
+                acc += 100
+    return acc
 def AStart(inicio,opcion):
     ''' Implementación del algoritmo A*'''
 
