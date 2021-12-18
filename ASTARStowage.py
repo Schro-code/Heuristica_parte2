@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from heapdict import heapdict
 import sys
@@ -281,11 +281,9 @@ def parse_solution(solucion):
         orden += 1
         op, cont, x, y = linea.split('_')
         if op == 'mover':
-            #acciones.append(f"{orden}. <{op}> ({x},{y})") solo funciona en pyton3
-            acciones.append("{orden}. <{op}> ({x},{y})".format(orden = orden, op = op, x = x, y = y))
+            acciones.append(f"{orden}. <{op}> ({x},{y})")  #solo funciona en pyton3
         else:
-            #acciones.append(f"{orden}. <{op}> ({cont}, ({x},{y}))") solo funciona en python3
-            acciones.append("{orden}. <{op}> ({cont}, ({x},{y}))".format(orden = orden, op = op, cont = cont, x = x, y = y))
+            acciones.append(f"{orden}. <{op}> ({cont}, ({x},{y}))") #solo funciona en python3
 
     return acciones
 
